@@ -1,6 +1,3 @@
-// use clap::Parser;
-
-
 // fn fibo(n: u32) -> Option<u32> {
 //     if n == 0 {
 //         Some(0)
@@ -27,7 +24,7 @@
 //         if let Some(f) = fibo(i) {
 //             println!("fibo({}) = {}", i, f);
 //         } else {
-//             println!("Fibo({}) as a u32 cannot be represented, exiting loop.", i);
+//             println!("Fibo({}) exceed u32 range, exiting the loop.", i);
 //             break;
 //         }
 //     }
@@ -37,19 +34,14 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(
     name = "fibo",
-    about = "Compute Fibonacci suite values",
+    about = "Compute Fibonacci values",
     version = "1.0",
-    author = "Your Name"
+    author = "Me"
 )]
 struct Opts {
-    /// The maximal number to print the fibo value of
     value: u32,
-
-    /// Print intermediate values
     #[clap(short, long)]
     verbose: bool,
-
-    /// The minimum number to compute
     #[clap(short, long, default_value = "0")]
     min: u32,
 }
@@ -81,10 +73,8 @@ fn main() {
         if let Some(f) = fibo(i) {
             println!("fibo({}) = {}", i, f);
         } else {
-            println!("Fibo({}) as a u32 cannot be represented, exiting loop.", i);
+            println!("Fibo({}) exceed u32 range, exiting the loop.", i);
             break;
         }
     }
 }
-
-
