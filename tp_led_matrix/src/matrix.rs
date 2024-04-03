@@ -22,7 +22,7 @@ impl Matrix<'_> {
         pa5: PA5,
         pa6: PA6,
         pa7: PA7,
-        pa15: PA15, 
+        pa15: PA15,
         pb0: PB0,
         pb1: PB1,
         pb2: PB2,
