@@ -84,9 +84,8 @@
 
 #![no_std]
 #![no_main]
-// #![feature(type_alias_impl_trait)]
+#![feature(type_alias_impl_trait)]
 
-use defmt::unwrap;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_stm32 as _;
@@ -100,10 +99,10 @@ use embassy_time::{Duration, Ticker, Timer};
 use panic_probe as _;
 use tp_led_matrix::{Color, Image, Matrix};
 
-static IMAGE: Mutex<ThreadModeRawMutex, Image> = Mutex::new(Image::new_solid(Color::BLUE));
+static mut IMAGE: Mutex<ThreadModeRawMutex, Image> = Mutex::new(Image::new_solid(Color::BLACK));
 
 #[embassy_executor::main]
-async fn main(spawner: embassy_executor::Spawner) {
+async fn main(spawner: Spawner) {
     let mut config = Config::default();
     config.rcc.mux = ClockSrc::PLL1_R;
     config.rcc.hsi = true;
@@ -124,6 +123,22 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     spawner.spawn(blinker(p.PB14)).unwrap();
     spawner.spawn(display(matrix)).unwrap();
+
+    let mut ticker = Ticker::every(Duration::from_secs(1));
+    loop {
+        unsafe {
+            IMAGE = Mutex::new(Image::gradient(Color::BLUE));
+        }
+        ticker.next().await;
+        unsafe {
+            IMAGE = Mutex::new(Image::gradient(Color::RED));
+        }
+        ticker.next().await;
+        unsafe {
+            IMAGE = Mutex::new(Image::gradient(Color::GREEN));
+        }
+        ticker.next().await;
+    }
 }
 
 #[embassy_executor::task]
@@ -144,8 +159,18 @@ async fn blinker(pb14: PB14) {
 async fn display(mut matrix: Matrix<'static>) {
     let mut ticker = Ticker::every(Duration::from_hz(640));
     loop {
-        let image = IMAGE.try_lock().unwrap();
-        matrix.display_image(&image, &mut ticker).await;
-        ticker.next().await;
+        unsafe {
+            for i in 0..8 {
+                let local_buffer: &mut [Color; 8] = &mut [Color::BLACK; 8];
+                {
+                    let image_lock = IMAGE.lock().await;
+                    for j in 0..8 {
+                        local_buffer[j] = image_lock.row(i)[j].clone();
+                    }
+                }
+                matrix.send_row(i, local_buffer);
+                ticker.next().await;
+            }
+        };
     }
 }
