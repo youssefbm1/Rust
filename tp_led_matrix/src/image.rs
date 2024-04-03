@@ -1,6 +1,5 @@
 #[repr(C)]
-#[derive(Clone, Copy, Default)]
-#[derive(PartialEq, Debug)]
+#[derive(Clone, Copy, Default, PartialEq, Debug)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -13,7 +12,11 @@ impl Color {
     pub const RED: Color = Color { r: 255, g: 0, b: 0 };
     pub const GREEN: Color = Color { r: 0, g: 255, b: 0 };
     pub const BLUE: Color = Color { r: 0, g: 0, b: 255 };
-    pub const WHITE: Color = Color { r: 255, g: 255, b: 255 };
+    pub const WHITE: Color = Color {
+        r: 255,
+        g: 255,
+        b: 255,
+    };
     pub const BLACK: Color = Color { r: 0, g: 0, b: 0 };
     pub fn gamma_correct(&self) -> Self {
         Color {
@@ -53,7 +56,7 @@ impl Div<f32> for Color {
 pub struct Image([Color; 64]);
 
 impl Image {
-    pub fn new_solid(color: Color) -> Self {
+    pub const fn new_solid(color: Color) -> Self {
         Image([color; 64])
     }
 }
@@ -117,8 +120,6 @@ impl AsMut<[u8; 192]> for Image {
     }
 }
 
-
-
 // #[cfg(test)]
 // mod tests {
 //     use super::*;
@@ -129,9 +130,3 @@ impl AsMut<[u8; 192]> for Image {
 //         assert_eq!(gradient_image[(0, 0)], Color::RED);
 //     }
 // }
-
-
-
-
-
-

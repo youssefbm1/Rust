@@ -1,0 +1,33 @@
+
+[package]
+name = "vm-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { version = "0.3", features = ["arbitrary-derive"] }
+rand = { version = "0.8.5", features = ["small_rng"] }
+
+[dependencies.vm]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "basic"
+path = "fuzz_targets/basic.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "random"
+path = "fuzz_targets/random.rs"
+test = false
+doc = false
