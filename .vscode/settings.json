@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
+        "gpio",
         "pixelcolor",
-        "rprintln"
+        "rprintln",
+        "USART"
     ]
 }
