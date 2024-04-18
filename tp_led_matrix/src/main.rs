@@ -85,9 +85,6 @@ async fn display(mut matrix: Matrix<'static>) {
                 let local_buffer: &mut [Color; 8] = &mut [Color::BLACK; 8];
                 {
                     let image_lock = IMAGE.lock().await;
-                    // for j in 0..8 {
-                    //     local_buffer[j] = image_lock.row(i)[j].clone();
-                    // }
                     local_buffer.copy_from_slice(&image_lock.row(i)[..8]);
                 }
                 matrix.send_row(i, local_buffer);
@@ -98,50 +95,34 @@ async fn display(mut matrix: Matrix<'static>) {
 }
 
 #[embassy_executor::task]
-async fn serial_receiver(usart1: USART1, tx: PB6, rx: PB7, reception_channel: DMA1_CH5) {
-    bind_interrupts!(struct Irqs {
+async fn serial_receiver(usart1: USART1, pb6: PB6, pb7: PB7, dma1_ch5: DMA1_CH5) {
+    bind_interrupts!(struct Irqs{
         USART1 => usart::InterruptHandler<USART1>;
-    });
-
-    let mut usart_config = usart::Config::default();
-    usart_config.baudrate = 38400;
-    let mut uart_device =
-        Uart::new(usart1, rx, tx, Irqs, NoDma, reception_channel, usart_config).unwrap();
-    let mut buffer: [u8; 192] = [0x0; 192];
-    let mut ticker = Ticker::every(Duration::from_hz(640));
-
+});
+    let mut config = usart::Config::default();
+    config.baudrate = 38400;
+    let mut serial = Uart::new(usart1, pb7, pb6, Irqs, NoDma, dma1_ch5, config).unwrap();
+    let mut buffer = [0_u8; 192];
     loop {
-        let mut c = 0u8;
-        let first_read = core::slice::from_mut(&mut c);
-        let first_result = uart_device.read(first_read).await;
-        if first_read[0] == 0xff {
-            match first_result {
-                Ok(_) => {
-                    let mut n: usize = 0;
-                    'shift_loop: loop {
-                        let result = uart_device.read(&mut buffer[n..]).await;
-                        match result {
-                            Ok(_) => {
-                                for k in 0..192 {
-                                    if buffer[191 - k] == 0xff {
-                                        buffer.rotate_right(k);
-                                        n = k;
-                                        continue 'shift_loop;
-                                    }
-                                }
-                                break 'shift_loop;
-                            }
-                            Err(_) => continue,
-                        }
-                    }
-                }
-                _ => {
-                    ticker.next().await;
+    rm .git/index.lock   let mut c = 0;
+        serial.read(core::slice::from_mut(&mut c)).await.unwrap();
+        if c != 0xff {
+            continue;
+        }
+        let mut start = 0;
+        'receive: loop {
+            serial.read(&mut buffer[start..]).await.unwrap();
+            for pos in (start..192).rev() {
+                if buffer[pos] == 0xff {
+                    buffer.rotate_left(pos+1);
+                    start = 192 - (pos + 1);
+                    continue 'receive;
                 }
             }
+            break;
         }
-        let mut image_lock = unsafe { IMAGE.lock().await };
-        *image_lock.as_mut() = buffer;
-        drop(image_lock);
+        let mut image = unsafe {IMAGE.lock().await};
+        *image.as_mut() = buffer;
+        drop(image);
     }
 }
