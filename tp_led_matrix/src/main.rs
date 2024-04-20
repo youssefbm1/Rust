@@ -97,14 +97,14 @@ async fn display(mut matrix: Matrix<'static>) {
 #[embassy_executor::task]
 async fn serial_receiver(usart1: USART1, pb6: PB6, pb7: PB7, dma1_ch5: DMA1_CH5) {
     bind_interrupts!(struct Irqs{
-        USART1 => usart::InterruptHandler<USART1>;
-});
+            USART1 => usart::InterruptHandler<USART1>;
+    });
     let mut config = usart::Config::default();
     config.baudrate = 38400;
     let mut serial = Uart::new(usart1, pb7, pb6, Irqs, NoDma, dma1_ch5, config).unwrap();
     let mut buffer = [0_u8; 192];
     loop {
-    rm .git/index.lock   let mut c = 0;
+        let mut c = 0;
         serial.read(core::slice::from_mut(&mut c)).await.unwrap();
         if c != 0xff {
             continue;
@@ -114,14 +114,14 @@ async fn serial_receiver(usart1: USART1, pb6: PB6, pb7: PB7, dma1_ch5: DMA1_CH5)
             serial.read(&mut buffer[start..]).await.unwrap();
             for pos in (start..192).rev() {
                 if buffer[pos] == 0xff {
-                    buffer.rotate_left(pos+1);
+                    buffer.rotate_left(pos + 1);
                     start = 192 - (pos + 1);
                     continue 'receive;
                 }
             }
             break;
         }
-        let mut image = unsafe {IMAGE.lock().await};
+        let mut image = unsafe { IMAGE.lock().await };
         *image.as_mut() = buffer;
         drop(image);
     }
